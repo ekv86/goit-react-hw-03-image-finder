@@ -1,6 +1,8 @@
+import { ImageSearch } from "./ImageSearch"
+
 export const App = () => {
   return (
-    <div
+    <div className=""
       style={{
         height: '100vh',
         display: 'flex',
@@ -10,7 +12,7 @@ export const App = () => {
         color: '#010101'
       }}
     >
-      React homework template
+      <ImageSearch/>
     </div>
   );
 };
