@@ -1,72 +1,63 @@
 import { Component } from 'react';
-import { getImages } from './fetch_API';
+import { getImages } from '../services/fetch_API';
+import { SearchBar } from './Searchbar';
 import { ImageGalleryItem } from './ImageGalleryItem';
 import { Button } from './Button';
 import { Modal } from './Modal';
 import { Circles } from 'react-loader-spinner';
 import css from './styles.module.css';
 
-const STATUS = {
-  idle: 'idle',
-  pending: 'pending',
-  resolved: 'resolved',
-  rejected: 'rejected',
-};
-
 const perPage = 12;
-let currentPage = 1;
 
 export class ImageGallery extends Component {
   state = {
-    searchResult: null,
+    value: '',
+    searchResult: [],
+    currentPage: 1,
     totalPage: 0,
     isLoading: false,
-    status: STATUS.idle,
     error: '',
     isShowModal: false,
     selectImgLink: null,
   };
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.searchValue !== this.props.searchValue) {
-      currentPage = 1;
-      this.setState({ status: STATUS.pending });
-      getImages(this.props.searchValue)
-        .then(searchResult => {
-          if (searchResult.total === 0) {
-            throw new Error();
-          }
-          this.setState({
-            searchResult: searchResult.hits,
-            totalPage: Math.ceil(searchResult.total / perPage),
-            status: STATUS.resolved,
-          });
-        })
-        .catch(() =>
-          this.setState({
-            error: `Sorry, we can't find ${this.props.searchValue}`,
-            status: STATUS.rejected,
-          })
-        );
+  componentDidUpdate(_, prevState) {
+    if (prevState.value !== this.state.value) {
+      this.fetchImg();
     }
   }
 
-  handleClickBtn = () => {
-    currentPage += 1;
+  handleFormSubmit = value => {
+    this.setState({
+      value,
+      currentPage: 1,
+      searchResult: [],
+      error: '',
+      totalPage: 0,
+    });
+  };
+
+  fetchImg = () => {
+    const { value, currentPage } = this.state;
     this.setState({ isLoading: true });
-    getImages(this.props.searchValue, currentPage)
-      .then(searchResult =>
+    getImages(value, currentPage)
+      .then(searchResult => {
+        if (searchResult.total === 0) {
+          throw new Error();
+        }
+
         this.setState(prevState => ({
           searchResult: [...prevState.searchResult, ...searchResult.hits],
-          isLoading: false,
-        }))
-      )
+          currentPage: prevState.currentPage + 1,
+          totalPage: Math.ceil(searchResult.total / perPage),
+        }));
+      })
       .catch(() =>
         this.setState({
-          error: 'Sorry, try again',
-          status: STATUS.rejected,
+          error: `Sorry, we can't find ${value}`,
         })
-      );
+      )
+      .finally(() => this.setState({ isLoading: false }));
   };
 
   selectImg = link => {
@@ -80,65 +71,49 @@ export class ImageGallery extends Component {
   render() {
     const {
       searchResult,
-      status,
+      currentPage,
       error,
       totalPage,
       isLoading,
       isShowModal,
       selectImgLink,
     } = this.state;
-
-    if (status === STATUS.pending) {
-      return (
-        <Circles
-          height="80"
-          width="80"
-          color="#4fa94d"
-          ariaLabel="circles-loading"
-          wrapperStyle={{ marginLeft: '40%' }}
-          wrapperClass=""
-          visible={true}
-        />
-      );
-    }
-    if (status === STATUS.rejected) {
-      return <h3>{error}</h3>;
-    }
-    if (status === STATUS.resolved) {
-      return (
-        <>
-          <ul className={css.imageGallery}>
-            {searchResult.map(({ id, webformatURL, largeImageURL, tags }) => (
-              <ImageGalleryItem
-                key={id}
-                url={webformatURL}
-                tags={tags}
-                largeUrl={largeImageURL}
-                onSelect={this.selectImg}
-              />
-            ))}
-          </ul>
-          {totalPage > 1 && currentPage !== totalPage && (
-            <Button onClick={this.handleClickBtn} />
-          )}
-          {isLoading && (
-            <Circles
-              height="80"
-              width="80"
-              color="#4fa94d"
-              ariaLabel="circles-loading"
-              wrapperStyle={{ marginLeft: '40%' }}
-              wrapperClass=""
-              visible={true}
+    return (
+      <div className={css.container}>
+        <SearchBar onSubmit={this.handleFormSubmit} />
+        {error && <h3 className={css.error}>{error}</h3>}
+        {isLoading && (
+          <Circles
+            height="80"
+            width="80"
+            color="#4fa94d"
+            ariaLabel="circles-loading"
+            wrapperStyle={{ marginLeft: '40%' }}
+            wrapperClass=""
+            visible={true}
+          />
+        )}
+        <ul className={css.imageGallery}>
+          {searchResult.map(({ id, webformatURL, largeImageURL, tags }) => (
+            <ImageGalleryItem
+              key={id}
+              url={webformatURL}
+              tags={tags}
+              largeUrl={largeImageURL}
+              onSelect={this.selectImg}
             />
-          )}
-          {isShowModal && (
-            <Modal onClose={this.closeModal}>
-              <img src={selectImgLink} alt="" />
-            </Modal>
-          )}
-        </>
-      );
-    }
+          ))}
+        </ul>
+        {totalPage > 1 && currentPage - 1 !== totalPage && !isLoading && (
+          <Button onClick={this.fetchImg} />
+        )}
+
+        {isShowModal && (
+          <Modal onClose={this.closeModal}>
+            <img src={selectImgLink} alt="" />
+          </Modal>
+        )}
+      </div>
+    );
   }
 }

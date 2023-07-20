@@ -1,18 +1,18 @@
-import { ImageSearch } from "./ImageSearch"
+import { ImageGallery } from './ImageGallery';
 
 export const App = () => {
   return (
-    <div className=""
+    <div
+      className=""
       style={{
         height: '100vh',
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center',
         fontSize: 40,
-        color: '#010101'
+        color: '#010101',
       }}
     >
-      <ImageSearch/>
+      <ImageGallery />
     </div>
   );
 };

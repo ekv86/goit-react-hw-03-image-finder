@@ -1,8 +1,11 @@
 import css from './styles.module.css';
 import PropTypes from 'prop-types';
 
-export const ImageGalleryItem = ({ url, largeUrl, tags, onSelect }) => (
-  <li className={css.imageGalleryItem} onClick={() => onSelect(largeUrl)}>
+export const ImageGalleryItem = ({url, largeUrl, tags, onSelect }) => (
+  <li
+    className={css.imageGalleryItem}
+    onClick={() => onSelect(largeUrl)}
+  >
     <img src={url} alt={tags} className={css.imageGalleryItem__image} />
   </li>
 );
